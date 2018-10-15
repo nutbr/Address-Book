@@ -1,0 +1,643 @@
+//
+
+//  ViewController.h
+
+//  AddressBook
+
+//
+
+//  Created by Sábado on 25/10/14.
+
+//  Copyright (c) 2014 RUI TOLEDO. All rights reserved.
+
+//
+
+ 
+
+#import <UIKit/UIKit.h>
+
+ 
+
+// Importar os frameworks do AdressBook
+
+#import <AddressBook/AddressBook.h>
+
+#import <AddressBookUI/AddressBookUI.h>
+
+ 
+
+ 
+
+// Importando o delegate para termos acesso aos seus métodos
+
+@interface ViewController : UIViewController<ABPeoplePickerNavigationControllerDelegate>
+
+ 
+
+ 
+
+@property (weak, nonatomic) IBOutletUILabel *labelNome;
+
+ 
+
+@property (weak, nonatomic) IBOutletUILabel *labelSobrenome;
+
+ 
+
+@property (weak, nonatomic) IBOutletUILabel *labelTelefone;
+
+ 
+
+// Variavel de controle que usaremos para verificar se o usuário quer deletar ou selecionar um contato
+
+@property(nonatomic,assign) BOOL isSelecting;
+
+ 
+
+ 
+
+ 
+
+ 
+
+- (IBAction)selecionar:(UIButton *)sender;
+
+ 
+
+- (IBAction)apager:(UIButton *)sender;
+
+ 
+
+ 
+
+ 
+
+@end
+
+ 
+
+ 
+
+ 
+
+ 
+
+//
+
+//  ViewController.m
+
+//  AddressBook
+
+//
+
+//  Created by Sábado on 25/10/14.
+
+//  Copyright (c) 2014 RUI TOLEDO. All rights reserved.
+
+//
+
+ 
+
+#import "ViewController.h"
+
+ 
+
+@interfaceViewController ()
+
+ 
+
+@end
+
+ 
+
+@implementation ViewController
+
+ 
+
+- (void)viewDidLoad
+
+{
+
+    [superviewDidLoad];
+
+// Do any additional setup after loading the view, typically from a nib.
+
+}
+
+ 
+
+- (void)didReceiveMemoryWarning
+
+{
+
+    [superdidReceiveMemoryWarning];
+
+    // Dispose of any resources that can be recreated.
+
+}
+
+ 
+
+- (IBAction)selecionar:(UIButton *)sender
+
+{
+
+    // Iniciamos setando a variavel de controle BOOL como YES, pois este método tem a intenção de selecionar
+
+    self.isSelecting=YES;
+
+    
+
+    // Criando um objeto através da Classe que permite acesso a agenda de contatos
+
+    ABPeoplePickerNavigationController *peoplePicker=[[ABPeoplePickerNavigationControlleralloc]init];
+
+    
+
+    // Ligando o delegate (diferente só do delegate - mas aceitaria herança)
+
+    peoplePicker.peoplePickerDelegate=self;
+
+    
+
+    // Exibindo o Controller em nossa tela
+
+    [selfpresentViewController:peoplePicker animated:YEScompletion:nil];
+
+    
+
+}
+
+ 
+
+- (IBAction)apager:(UIButton *)sender
+
+{
+
+    // Setando o isSelecting como NO;
+
+    self.isSelecting=NO;
+
+    
+
+    // Criando um objeto do tipo PeoplePicker
+
+    ABPeoplePickerNavigationController *peoplePicker=[[ABPeoplePickerNavigationControlleralloc]init];
+
+    
+
+    // Ligando o delegate (diferente só do delegate - mas aceitaria herança)
+
+    peoplePicker.peoplePickerDelegate=self;
+
+    
+
+    // Exibindo o Controller em nossa tela
+
+    [selfpresentViewController:peoplePicker animated:YEScompletion:nil];
+
+    
+
+}
+
+ 
+
+ 
+
+#pragma mark - Métodos de ABPeoplePickerControllerDelegate
+
+ 
+
+// Metodo que é disparado quando o usuario cancela a selecao
+
+-(void)peoplePickerNavigationControllerDidCancel:(ABPeoplePickerNavigationController *)peoplePicker
+
+{
+
+    NSLog(@"Saindo");
+
+    // Tiramos o picker de cena
+
+    [peoplePicker dismissViewControllerAnimated:YEScompletion:nil];
+
+    
+
+}
+
+ 
+
+ 
+
+// Método que é disparado quando o usuario escolhe um contato e define se os detalhes serão abertos
+
+// Pode fazer no didSelectPerson nos XCode mais novos (só não vai ter o retorno)
+
+-(BOOL)peoplePickerNavigationController:(ABPeoplePickerNavigationController *)peoplePicker shouldContinueAfterSelectingPerson:(ABRecordRef)person
+
+{
+
+    // Verificamos se a intenção do usuário é selecionar ou apagar um contato
+
+    if (self.isSelecting)
+
+    {
+
+        // Caso o usuário queira selecionar
+
+    
+
+        // Resgatamos os valores do contato selecionado e armazenamos em uma string
+
+        
+
+        
+
+            // Resgatando o nome
+
+        NSString *primeiroNome = (__bridgeNSString *)ABRecordCopyValue(person, kABPersonFirstNameProperty);
+
+        
+
+ 
+
+        // Resgatando o Sobrenome
+
+        NSString *sobrenome = (__bridgeNSString *)ABRecordCopyValue(person, kABPersonLastNameProperty);
+
+ 
+
+        
+
+        // Resgatando o Telefone
+
+            // Acessando o Array primitivo de contato
+
+        ABMultiValueRef telefonesContato = ABRecordCopyValue(person, kABPersonPhoneProperty);
+
+        
+
+        
+
+        // Convertendo em um NSArray (que é o que utilizamos normalmente)
+
+        NSArray *arrayTelefone = (__bridge NSArray *)ABMultiValueCopyArrayOfAllValues(telefonesContato);
+
+        
+
+        // Exibindo nas labels
+
+        self.labelNome.text=primeiroNome;
+
+        self.labelSobrenome.text=sobrenome;
+
+        self.labelTelefone.text=[arrayTelefone objectAtIndex:0];
+
+        
+
+        
+
+    }
+
+    else
+
+    {
+
+        // Caso a property isSelecting seja NO o usuario clicou no apagar
+
+        // Para apagar o contato criamos uma rotina
+
+        // Criar uma cópia da agenda do uduario
+
+        ABAddressBookRef agenda = ABAddressBookCreateWithOptions(NULL, NULL);
+
+        
+
+        // Definimos qual contato será apagado
+
+        ABAddressBookRemoveRecord(agenda, person, NULL);
+
+        
+
+        // Confirmando a operação e salvando os dados
+
+        ABAddressBookSave(agenda, NULL);
+
+        
+
+        // Limpando os labes
+
+        self.labelNome.text=nil;
+
+        self.labelSobrenome.text=nil;
+
+        self.labelTelefone.text=nil;
+
+        
+
+    }
+
+    
+
+    // Retirando a tela de cena (não é obrigatório em versoes mais recentes)
+
+    [peoplePicker dismissViewControllerAnimated:YEScompletion:nil];
+
+    
+
+    // Return YES libera a abertura da janela de Contatos
+
+    returnNO;
+
+}
+
+ 
+
+ 
+
+ 
+
+ 
+
+@end
+
+ 
+
+//
+
+//  TelaAdicionalViewController.h
+
+//  AddressBook
+
+//
+
+//  Created by Sábado on 25/10/14.
+
+//  Copyright (c) 2014 RUI TOLEDO. All rights reserved.
+
+//
+
+ 
+
+#import <UIKit/UIKit.h>
+
+// Importando o AddressBook
+
+#import <AddressBook/AddressBook.h>
+
+ 
+
+@interface TelaAdicionalViewController : UIViewController
+
+ 
+
+ 
+
+// Outlets para nossos elementos em tela
+
+ 
+
+@property (weak, nonatomic) IBOutletUITextField *textFieldNome;
+
+ 
+
+@property (weak, nonatomic) IBOutletUITextField *textFieldSobrenome;
+
+ 
+
+@property (weak, nonatomic) IBOutletUITextField *textFieldTelefone;
+
+ 
+
+ 
+
+// Action para nosso button
+
+ 
+
+- (IBAction)adicionar:(UIBarButtonItem *)sender;
+
+ 
+
+ 
+
+@end
+
+ 
+
+//
+
+//  TelaAdicionalViewController.m
+
+//  AddressBook
+
+//
+
+//  Created by Sábado on 25/10/14.
+
+//  Copyright (c) 2014 RUI TOLEDO. All rights reserved.
+
+//
+
+ 
+
+#import "TelaAdicionalViewController.h"
+
+ 
+
+@interfaceTelaAdicionalViewController ()
+
+ 
+
+@end
+
+ 
+
+@implementation TelaAdicionalViewController
+
+ 
+
+- (id)initWithNibName:(NSString *)nibNameOrNil bundle:(NSBundle *)nibBundleOrNil
+
+{
+
+    self = [super initWithNibName:nibNameOrNil bundle:nibBundleOrNil];
+
+    if (self) {
+
+        // Custom initialization
+
+    }
+
+    returnself;
+
+}
+
+ 
+
+- (void)viewDidLoad
+
+{
+
+    [superviewDidLoad];
+
+    // Do any additional setup after loading the view.
+
+}
+
+ 
+
+- (void)didReceiveMemoryWarning
+
+{
+
+    [superdidReceiveMemoryWarning];
+
+    // Dispose of any resources that can be recreated.
+
+}
+
+ 
+
+ 
+
+- (IBAction)adicionar:(UIBarButtonItem *)sender
+
+{
+
+ 
+
+    // Primeiro verificamos se o usuário preencheu todos os dados
+
+    
+
+    if (self.textFieldNome.text.length>0 && self.textFieldSobrenome.text.length>0 && self.textFieldTelefone.text.length>0)
+
+    {
+
+        // Resgatando os dados inseridos pelo usuario
+
+        NSString *nome = self.textFieldNome.text;
+
+        NSString *sobrenome = self.textFieldSobrenome.text;
+
+        NSString *telefone = self.textFieldTelefone.text;
+
+        
+
+        // Depois que temos os dados já podemos iniciar a rotina para alteração de dados na agenda
+
+        
+
+        // Criando uma cópia da agenda
+
+        ABAddressBookRef agenda = ABAddressBookCreateWithOptions(NULL, NULL);
+
+        
+
+        // Criando um novo contato
+
+        ABRecordRef novoContato = ABPersonCreate();
+
+        
+
+        // Definindo as propriedades do contato
+
+        
+
+        // Definindo o nome do contato
+
+        ABRecordSetValue(novoContato, kABPersonFirstNameProperty, (__bridgeCFStringRef)nome, NULL);
+
+ 
+
+        // Definindo o sobrenome do contato
+
+        ABRecordSetValue(novoContato, kABPersonLastNameProperty, (__bridge CFStringRef)sobrenome, NULL);
+
+ 
+
+        // Para o telefone o sistema nos pede um array, entáo devemos proceder da seguinte forma:
+
+        // Criar o array e inserir o número e ai sim adicionar ao nosso contato
+
+        ABMultiValueRef arrayTelefone = ABMultiValueCreateMutable(kABPersonPhoneProperty);
+
+        
+
+        // Adicionando o numero em nosso array
+
+        ABMultiValueAddValueAndLabel(arrayTelefone, (__bridge CFTypeRef)telefone, (__bridge CFStringRef)@"Casa", NULL);
+
+        
+
+        // Adicionando o array do telefone ao nosso contato
+
+        ABRecordSetValue(novoContato, kABPersonPhoneProperty, arrayTelefone, NULL);
+
+        
+
+        // Gravar o novo contato na agenda
+
+        ABAddressBookAddRecord(agenda, novoContato, NULL);
+
+        
+
+        // Salvando
+
+        ABAddressBookSave(agenda, NULL);
+
+        
+
+        // Limpando as textfields
+
+        self.textFieldNome.text=nil;
+
+        self.textFieldSobrenome.text=nil;
+
+        self.textFieldTelefone.text=nil;
+
+        
+
+ 
+
+        
+
+        
+
+    }
+
+    else
+
+    {
+
+        UIAlertView *alerta=[[UIAlertViewalloc]initWithTitle:@"Alerta"message:@"Preencha todos os campos antes de prosseguir!"delegate:nilcancelButtonTitle:nilotherButtonTitles:@"Ok", nil];
+
+        // Exibindo o alerta
+
+        [alerta show];
+
+        
+
+    
+
+        
+
+    }
+
+ 
+
+    
+
+    
+
+    
+
+}
+
+ 
+
+ 
+
+ 
+
+@end
